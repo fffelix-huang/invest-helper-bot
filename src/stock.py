@@ -35,7 +35,9 @@ def prices_to_cumulative_returns(prices: pd.DataFrame):
 
 def plot_stock_compare_with_spy(
     symbol: str,
-    period: str = "1m"
+    period: str = None,
+    start_date: str = None,
+    end_date: str = None,
 ) -> io.BytesIO:
     period = period.lower()
 
@@ -45,20 +47,22 @@ def plot_stock_compare_with_spy(
     yf_period = VALID_PERIODS[period]
 
     try:
-        stock_data = yf.download(symbol, period=yf_period, interval="1d")
+        if period is not None:
+            stock_data = yf.download(symbol, period=yf_period, interval="1d")
+        else:
+            stock_data = yf.download(symbol, start=start_date, end=end_date, interval="1d")
 
         if stock_data.empty:
             raise StockNotFoundError(symbol)
 
         symbol = symbol.upper()
-        start_date = stock_data.index[0]
-        end_date = stock_data.index[-1]
+        if start_date is None or end_date is None:
+            start_date = stock_data.index[0]
+            end_date = stock_data.index[-1]
         SPY = yf.download("SPY", start=start_date, end=end_date, interval="1d")
 
         stock_returns = prices_to_returns(stock_data["Close"])
         spy_returns = prices_to_returns(SPY["Close"])
-
-        print(stock_returns)
 
         gs = GridSpec(2, 2, height_ratios=[1, 1])
         fig = plt.figure(figsize=(12, 8))
@@ -128,7 +132,7 @@ def plot_stock_compare_with_spy(
         plt.close()
         return buf
     except Exception as e:
-        print(e)
+        print(f"Error: {str(e)}")
 
 if __name__ == "__main__":
     image = plot_stock_compare_with_spy("AAPL", "5y")
