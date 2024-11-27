@@ -11,7 +11,7 @@ import datetime
 
 load_dotenv()
 
-TOKEN: Final[str] = os.getenv("TOKEN")
+TOKEN: Final[str] = os.getenv("DISCORD_TOKEN")
 
 import yfinance as yf
 import matplotlib.pyplot as plt
@@ -71,7 +71,7 @@ async def stock(ctx, symbol: str, period: str = "1m"):
         end_date = stock_data.index[-1]
         SPY = yf.download("SPY", start=start_date, end=end_date, interval="1d")
 
-        fig, (ax, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+        fig, (ax, ax2) = plt.subplots(1, 2, figsize=(18, 12))
         ax.plot(stock_data.index, stock_data["Close"], label=symbol)
         ax.set_title(f"{symbol} ({period})")
         ax.set_xlabel("Date")
