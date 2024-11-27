@@ -79,7 +79,7 @@ def plot_stock_compare_with_spy(
         columns = ["Metric", symbol, "SPY"]
         rows = [
             ["CAGR", f"{cagr(stock_returns) * 100:.2f}%", f"{cagr(spy_returns) * 100:.2f}%"],
-            ["Standard Deviation", f"{standard_deviation(stock_returns) * 100:.2f}%", f"{standard_deviation(stock_returns) * 100:.2f}%"],
+            ["Standard Deviation", f"{standard_deviation(stock_returns) * 100:.2f}%", f"{standard_deviation(spy_returns) * 100:.2f}%"],
             ["Sharpe Ratio", f"{sharpe_ratio(stock_returns):.2f}", f"{sharpe_ratio(spy_returns):.2f}"],
             ["Sortino Ratio", f"{sortino_ratio(stock_returns):.2f}", f"{sortino_ratio(spy_returns):.2f}"],
             ["Calmar Ratio", f"{calmar_ratio(stock_returns):.2f}", f"{calmar_ratio(spy_returns):.2f}"],
