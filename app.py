@@ -207,8 +207,9 @@ def handle_message(event):
                 }
             ],
         )
-        print(response.choices[0].message.content)
-        user_data = json.loads(response.choices[0].message.content)
+        user_data_raw = response.choices[0].message.content
+        print(user_data_raw)
+        user_data = json.loads(user_data_raw)
 
         from src.stock import plot_stock_compare_with_spy
         fn = sender + "-" + "".join(choice(string.ascii_uppercase) for x in range(10)) + ".png"
@@ -232,11 +233,31 @@ def handle_message(event):
         except Exception as e:
             print(f"Error generating temporary URL: {e}")
 
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "生成圖片解釋，中文300字"},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": temporary_url,
+                            },
+                        },
+                    ],
+                }
+            ],
+        )
+
         if event.message.text:
             line_bot_api.reply_message_with_http_info(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
                     messages=[
+                        TextMessage(text=user_data_raw),
                         TextMessage(text=response.choices[0].message.content),
                         ImageMessage(
                             original_content_url=temporary_url,
