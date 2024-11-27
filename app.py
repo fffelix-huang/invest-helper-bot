@@ -169,7 +169,7 @@ def handle_message(event):
                     ]
                 )
             )
-
+        today = datetime.datetime.now().strftime('%Y-%m-%d')
         response = client.chat.completions.create(
             model="o1-mini",
             messages=[
@@ -179,7 +179,7 @@ def handle_message(event):
                 },
                 {
                     "role": "assistant",
-                    "content": f"今天的日期是：{datetime.datetime.now().strftime('%Y-%m-%d')}"
+                    "content": f"今天的日期是：{today}"
                 },
                 {
                     "role": "assistant",
@@ -195,7 +195,7 @@ def handle_message(event):
                 },
                 {
                     "role": "assistant",
-                    "content": f"period （格式：<%Y-%m-%d>~<%Y-%m-%d> 開始與結束嚴格為%Y-%m-%d）預設結束時間為{datetime.datetime.now().strftime("%Y-%m-%d")}，以現在作為結束相對。或 user 給了一個完整開始結束時間，使用 user 給的時間區間"
+                    "content": f"period （格式：<%Y-%m-%d>~<%Y-%m-%d> 開始與結束嚴格為%Y-%m-%d）預設結束時間為{today}，以現在作為結束相對。或 user 給了一個完整開始結束時間，使用 user 給的時間區間"
                 },
                 {
                     "role": "assistant",
