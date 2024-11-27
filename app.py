@@ -51,7 +51,8 @@ s3_client = boto3.client(
     aws_access_key_id=AWS_ACCESS_KEY_ID,
     aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
     region_name=AWS_REGION,
-    config=Config(s3={'addressing_style': 'path'} if AWS_USE_PATH_STYLE_ENDPOINT else None)
+    config=Config(s3={'addressing_style': 'path'} if AWS_USE_PATH_STYLE_ENDPOINT else None),
+    verify=False
 )
 
 # os.getenv("DISCORD_TOKEN")
