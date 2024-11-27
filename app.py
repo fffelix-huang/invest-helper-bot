@@ -1,10 +1,12 @@
 import json
 import os
 import string
-from random import random
+import time
 from random import choice
 from flask import Flask, request, abort
-
+import redis
+from openai import OpenAI
+import datetime
 from linebot.v3 import (
     WebhookHandler
 )
@@ -26,6 +28,7 @@ from linebot.v3.webhooks import (
 from dotenv import load_dotenv
 
 app = Flask(__name__)
+r = redis.Redis(host='localhost', port=6379, db=0)
 
 load_dotenv()
 # os.getenv("DISCORD_TOKEN")
@@ -57,8 +60,29 @@ def callback():
 def handle_message(event):
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
-        from openai import OpenAI
-        import datetime
+        sender = event.source.user_id
+
+        count_data = r.get(sender+"-gpt-count")
+        if count_data is None:
+            count, date = 0, time.time()
+        else:
+            count, date = count_data.decode().split("-")
+            count = int(count)
+            if time.time() - float(date) > 60:
+                count, date = 0, time.time()
+        r.set(sender+"-gpt-count", f"{int(count)+1}-{time.time()}")
+
+        if count > 3:
+            line_bot_api.reply_message_with_http_info(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[
+                        TextMessage(text="你的問題太多了，請稍後再問")
+                    ]
+                )
+            )
+            return
+
 
         client = OpenAI(
             api_key=os.getenv('OPENAI_TOKEN'),
