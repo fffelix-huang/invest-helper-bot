@@ -44,10 +44,11 @@ def plot_stock_compare_with_spy(
 ) -> io.BytesIO:
     period = period.lower()
 
-    if period not in VALID_PERIODS:
-        raise PeriodNotFoundError(period)
+    if start_date is None or end_date is None:
+        if period not in VALID_PERIODS:
+            raise PeriodNotFoundError(period)
 
-    yf_period = VALID_PERIODS[period]
+        yf_period = VALID_PERIODS[period]
 
     try:
         if period is not None:
