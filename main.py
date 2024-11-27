@@ -1,23 +1,35 @@
 import json
+import os
 
 from flask import Flask, request, abort
 
-from linebot import (
-    LineBotApi, WebhookHandler
+from linebot.v3 import (
+    WebhookHandler
 )
-from linebot.exceptions import (
+from linebot.v3.exceptions import (
     InvalidSignatureError
 )
-from linebot.models import (
-    MessageEvent, TextMessage, TextSendMessage,
+from linebot.v3.messaging import (
+    Configuration,
+    ApiClient,
+    MessagingApi,
+    ReplyMessageRequest,
+    TextMessage, TemplateMessage, ButtonsTemplate, MessageAction, URIAction, ImageMessage, PostbackAction, FlexMessage,
+    FlexCarousel
 )
+from linebot.v3.webhooks import (
+    MessageEvent,
+    TextMessageContent, PostbackEvent
+)
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 
-line_bot_api = LineBotApi(
-    '4MU/F6G3w+2hbFr3aVODdp+rhRlYfN45e/qUuKFtir7jnWnKS11Yu2WvPXOzfLsTbOpbV9qoqGhmtS8DSkl79K1+gKV/xM+mjwQzIOhvOWmLDiAtkrvzqRUrAX8l0gk4DdU4luYGaW3vt4zBJTR5JAdB04t89/1O/w1cDnyilFU=')
-handler = WebhookHandler('e49463f8bda3c01f62d9ca4ab65eb33e')
+load_dotenv()
+# os.getenv("DISCORD_TOKEN")
 
+configuration = Configuration(access_token=os.environ.get('LINE_CHANNEL_ACCESS_TOKEN'))
+handler = WebhookHandler(os.environ.get('LINE_CHANNEL_SECRET'))
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -32,96 +44,106 @@ def callback():
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
-        print("Invalid signature. Please check your channel access token/channel secret.")
+        app.logger.info("Invalid signature. Please check your channel access token/channel secret.")
         abort(400)
 
     return 'OK'
 
 
-@handler.add(MessageEvent, message=TextMessage)
+@handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
-    # message: event.message.text
-    # user: event.source.userId
+    with ApiClient(configuration) as api_client:
+        line_bot_api = MessagingApi(api_client)
 
-    data = json.load(open('data.json', 'r'))
+        if event.message.text == "我不吃牛肉":
+            line_bot_api.reply_message_with_http_info(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[
+                        TextMessage(text='好的，我們將不會提供牛肉給您'),
+                        FlexMessage(
+                            alt_text='功能表',
+                            contents=FlexCarousel.from_json(flex(beef=False))
+                        )
+                    ]
+                )
+            )
 
-    message = event.message.text
-    user = event.source.user_id
-    type = message.split(' ')[0]
 
-    if type == "/add":
-        if user in data:
-            data[user].append({
-                "done": False,
-                "content": message.split(' ')[1]
-            })
-        else:
-            data[user] = [{
-                "done": False,
-                "content": message.split(' ')[1]
-            }]
+            return
 
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text='新增成功')
+        line_bot_api.reply_message_with_http_info(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[
+                    TemplateMessage(
+                        alt_text='功能表',
+                        template=ButtonsTemplate(
+                            text='請選擇服務項目',
+                            actions=[
+                                PostbackAction(
+                                    label='會員卡',
+                                    displayText='顯示會員卡',
+                                    data='action=member_card'
+                                ),
+                            ]
+                        )
+                    ),
+                    TextMessage(text='請選擇你想吃什麼'),
+                    FlexMessage(
+                        alt_text='功能表',
+                        contents=FlexCarousel.from_json(flex())
+                    )
+                ]
+            )
         )
-    elif type == "/del":
-        index = int(message.split(' ')[1])
-        if user in data:
-            del data[user][index]
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text='刪除成功')
-            )
-        else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text='您還沒新增過')
-            )
-    elif type == "/list":
-        if user in data:
-            msg = ""
-            for i, todo in enumerate(data[user]):
-                if todo['done']:
-                    msg += f"[{i}] {todo['content']} ✅\n"
-                else:
-                    msg += f"[{i}] {todo['content']} ❌\n"
-            if msg == "":
-                msg = "您目前沒有代辦事項"
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=msg)
-            )
-        else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text='您還沒新增過')
-            )
-    elif type == "/done":
-        index = int(message.split(' ')[1])
-        if user in data:
-            data[user][index]['done'] = True
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text='已紀錄完成')
-            )
-        else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text='你還沒新增過')
+
+
+@handler.add(PostbackEvent)
+def handle_postback(event):
+    with ApiClient(configuration) as api_client:
+        line_bot_api = MessagingApi(api_client)
+        if event.postback.data == 'action=member_card':
+            if os.path.exists('static/users.json'):
+                users = json.load(open('static/users.json'))
+            else:
+                users = []
+
+            userId = event.source.user_id
+            user_info = list(filter(lambda x: x["id"] == userId, users))
+
+            if len(user_info) == 0:
+                user_info = {
+                    "id": userId,
+                    "name": "未提供",
+                }
+                users.append(user_info)
+                with open("static/users.json", "w") as f:
+                    json.dump(users, f)
+            else:
+                user_info = user_info[0]
+            gen_member_card(user_info["name"], userId)
+            uid = userId
+
+            line_bot_api.reply_message_with_http_info(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[
+                        ImageMessage(
+                            original_content_url=f"https://test-linebot.hsuan.app/static/card/{uid}.png",
+                            preview_image_url=f"https://test-linebot.hsuan.app/static/card/{uid}.png"
+                        ),
+                        ImageMessage(
+                            original_content_url=f"https://test-linebot.hsuan.app/static/card/{uid}_qr.png",
+                            preview_image_url=f"https://test-linebot.hsuan.app/static/card/{uid}_qr.png"
+                        )
+                    ]
+                )
             )
 
-    json.dump(data, open('data.json', 'w'))
-    """
-    {
-        "message": {"id": "16260758267736", "text": "\u4f60\u597d", "type": "text"},
-        "mode": "active",
-         "replyToken": "63c4a9f92225420dbcc75b5194c74eb8",
-         "source": {"type": "user", "userId": "U6761c33c2ec6f168450ccf99fc30d7a4"},
-            "timestamp": 1655209804625,
-         "type": "message"
-    }
-    """
+
+
+
 
 
 
