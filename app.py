@@ -3,10 +3,17 @@ import os
 import string
 import time
 from random import choice
+
+import iso8601
 from flask import Flask, request, abort
 import redis
 from openai import OpenAI
 import datetime
+import boto3
+from botocore.client import Config
+import os
+from dotenv import load_dotenv
+
 from linebot.v3 import (
     WebhookHandler
 )
@@ -27,10 +34,26 @@ from linebot.v3.webhooks import (
 )
 from dotenv import load_dotenv
 
+load_dotenv()
+
+AWS_ENDPOINT = os.getenv("AWS_ENDPOINT")
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_BUCKET = os.getenv("AWS_BUCKET")
+AWS_REGION = os.getenv("AWS_DEFAULT_REGION")
+AWS_USE_PATH_STYLE_ENDPOINT = os.getenv("AWS_USE_PATH_STYLE_ENDPOINT", "false").lower() == "true"
+
 app = Flask(__name__)
 r = redis.Redis(host='localhost', port=6379, db=0)
+s3_client = boto3.client(
+    's3',
+    endpoint_url=AWS_ENDPOINT,
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    region_name=AWS_REGION,
+    config=Config(s3={'addressing_style': 'path'} if AWS_USE_PATH_STYLE_ENDPOINT else None)
+)
 
-load_dotenv()
 # os.getenv("DISCORD_TOKEN")
 
 configuration = Configuration(access_token=os.environ.get('LINE_CHANNEL_ACCESS_TOKEN'))
@@ -62,7 +85,7 @@ def handle_message(event):
         line_bot_api = MessagingApi(api_client)
         sender = event.source.user_id
 
-        count_data = r.get(sender+"-gpt-count")
+        count_data = r.get(sender + "-gpt-count")
         if count_data is None:
             count, date = 0, time.time()
         else:
@@ -70,7 +93,7 @@ def handle_message(event):
             count = int(count)
             if time.time() - float(date) > 60:
                 count, date = 0, time.time()
-        r.set(sender+"-gpt-count", f"{int(count)+1}-{time.time()}")
+        r.set(sender + "-gpt-count", f"{int(count) + 1}-{time.time()}")
 
         if count > 3:
             line_bot_api.reply_message_with_http_info(
@@ -82,7 +105,6 @@ def handle_message(event):
                 )
             )
             return
-
 
         client = OpenAI(
             api_key=os.getenv('OPENAI_TOKEN'),
@@ -101,7 +123,7 @@ def handle_message(event):
                 },
                 {
                     "role": "system",
-                    "content": f"檢查使用者的輸入是否與財金金融相關、使用者輸入中如果有提到日期，日期是否正常"
+                    "content": f"檢查使用者的輸入是否與財金金融相關，並且輸入只能要求我們執行分析或回測不可以產生多餘資訊、使用者輸入中如果有提到日期，日期是否正常"
                 },
                 {
                     "role": "system",
@@ -157,7 +179,7 @@ def handle_message(event):
                 },
                 {
                     "role": "assistant",
-                    "content": f"今天的日期是：{datetime.datetime.now().isoformat()}"
+                    "content": f"今天的日期是：{datetime.datetime.now().strftime('%Y-%m-%d')}"
                 },
                 {
                     "role": "assistant",
@@ -165,7 +187,7 @@ def handle_message(event):
                 },
                 {
                     "role": "assistant",
-                    "content": f"僅嚴格輸出JSON格式，有兩個屬性，symbol 與 period"
+                    "content": f"僅嚴格輸出JSON格式，有兩個屬性，symbol 與 period，禁止多輸出 Markdown"
                 },
                 {
                     "role": "assistant",
@@ -173,7 +195,7 @@ def handle_message(event):
                 },
                 {
                     "role": "assistant",
-                    "content": f"period （格式：<ISO8601>-<ISO8601> 開始與結束嚴格為ISO8601）預設結束時間為{datetime.datetime.now().isoformat()}，以現在作為結束相對。或 user 給了一個完整開始結束時間，使用 user 給的時間區間"
+                    "content": f"period （格式：<%Y-%m-%d>~<%Y-%m-%d> 開始與結束嚴格為%Y-%m-%d）預設結束時間為{datetime.datetime.now().strftime("%Y-%m-%d")}，以現在作為結束相對。或 user 給了一個完整開始結束時間，使用 user 給的時間區間"
                 },
                 {
                     "role": "assistant",
@@ -186,6 +208,29 @@ def handle_message(event):
             ],
         )
         print(response.choices[0].message.content)
+        user_data = json.loads(response.choices[0].message.content)
+
+        from src.stock import plot_stock_compare_with_spy
+        fn = sender + "-" + "".join(choice(string.ascii_uppercase) for x in range(10)) + ".png"
+        try:
+            s3_client.put_object(Bucket=AWS_BUCKET, Key=fn, Body=plot_stock_compare_with_spy(
+                symbol=user_data["symbol"],
+                start_date=user_data["period"].split("~")[0],
+                end_date=user_data["period"].split("~")[1]
+            ))
+            print(f"File '{fn}' uploaded successfully.")
+        except Exception as e:
+            print(f"Error uploading file: {e}")
+
+        try:
+            temporary_url = s3_client.generate_presigned_url(
+                'get_object',
+                Params={'Bucket': AWS_BUCKET, 'Key': fn},
+                ExpiresIn=3600  # 有效時間（秒），1 小時 = 3600 秒
+            )
+            print(f"Temporary URL (1 hour): {temporary_url}")
+        except Exception as e:
+            print(f"Error generating temporary URL: {e}")
 
         if event.message.text:
             line_bot_api.reply_message_with_http_info(
@@ -193,6 +238,10 @@ def handle_message(event):
                     reply_token=event.reply_token,
                     messages=[
                         TextMessage(text=response.choices[0].message.content),
+                        ImageMessage(
+                            original_content_url=temporary_url,
+                            preview_image_url=temporary_url
+                        )
                     ]
                 )
             )
