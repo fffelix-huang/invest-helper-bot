@@ -1,11 +1,14 @@
 import yfinance as yf
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 import pandas as pd
 import io
 import datetime
 from skfolio.preprocessing import prices_to_returns
-from metrics import *
+from src.metrics import *
+
+matplotlib.use("agg")
 
 VALID_PERIODS = {
     "1d": "1d",
