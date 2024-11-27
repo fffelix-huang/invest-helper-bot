@@ -75,7 +75,7 @@ def plot_stock_compare_with_spy(
             ["Sortino Ratio", f"{sortino_ratio(stock_returns):.2f}", f"{sortino_ratio(spy_returns):.2f}"],
             ["Calmar Ratio", f"{calmar_ratio(stock_returns):.2f}", f"{calmar_ratio(spy_returns):.2f}"],
             ["Max Drawdown", f"{max_drawdown(stock_returns) * 100:.2f}%", f"{max_drawdown(spy_returns) * 100:.2f}%"],
-
+            ["Correlation with SPY", f"{correlation(stock_returns, spy_returns):.2f}", f"{correlation(spy_returns, spy_returns):.2f}"],
         ]
         ax_summary = fig.add_subplot(gs[0, :])
         ax_summary.axis("off")
