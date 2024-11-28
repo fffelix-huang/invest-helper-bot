@@ -204,7 +204,7 @@ def handle_message(event):
                 },
                 {
                     "role": "assistant",
-                    "content": f'範例輸出：{"symbol": "2330.TW", "period": "2024-11-25~2024-11-28"}'
+                    "content": "範例輸出：{\"symbol\": \"2330.TW\", \"period\": \"2024-11-25~2024-11-28\"}"
                 },
                 {
                     "role": "user",
@@ -245,7 +245,6 @@ def handle_message(event):
                 )
             )
 
-
         from src.stock import plot_stock_compare_with_spy
         fn = sender + "-" + "".join(choice(string.ascii_uppercase) for x in range(10)) + ".png"
         try:
@@ -267,7 +266,6 @@ def handle_message(event):
             print(f"Temporary URL (1 hour): {temporary_url}")
         except Exception as e:
             print(f"Error generating temporary URL: {e}")
-
 
         response = client.chat.completions.create(
             model="gpt-4o-mini",
