@@ -196,11 +196,15 @@ def handle_message(event):
                 },
                 {
                     "role": "assistant",
-                    "content": f"period （格式：<%Y-%m-%d>~<%Y-%m-%d> 開始與結束嚴格為%Y-%m-%d）預設結束時間為{today}，以現在作為結束相對。或 user 給了一個完整開始結束時間，使用 user 給的時間區間"
+                    "content": f"period （格式：<%Y-%m-%d>~<%Y-%m-%d> 開始與結束嚴格為%Y-%m-%d，例如：2024-11-25~2024-11-28）預設結束時間為{today}，以現在作為結束相對。或 user 給了一個完整開始結束時間，使用 user 給的時間區間"
                 },
                 {
                     "role": "assistant",
                     "content": f"再次重申，嚴格輸出JSON，不應使用 Markdown 包起來"
+                },
+                {
+                    "role": "assistant",
+                    "content": f'範例輸出：{"symbol": "2330.TW", "period": "2024-11-25~2024-11-28"}'
                 },
                 {
                     "role": "user",
@@ -210,7 +214,37 @@ def handle_message(event):
         )
         user_data_raw = response.choices[0].message.content
         print(user_data_raw)
-        user_data = json.loads(user_data_raw)
+        try:
+            user_data = json.loads(user_data_raw)
+        except:
+            return line_bot_api.reply_message_with_http_info(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[
+                        TextMessage(text="發生錯誤，請再試一遍")
+                    ]
+                )
+            )
+
+        if user_data['symbol'] == '':
+            return line_bot_api.reply_message_with_http_info(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[
+                        TextMessage(text="請在文句中精準提到股票名稱或代碼")
+                    ]
+                )
+            )
+        if user_data['period'] == '':
+            return line_bot_api.reply_message_with_http_info(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[
+                        TextMessage(text="請在文句中精準提到日期區間")
+                    ]
+                )
+            )
+
 
         from src.stock import plot_stock_compare_with_spy
         fn = sender + "-" + "".join(choice(string.ascii_uppercase) for x in range(10)) + ".png"
