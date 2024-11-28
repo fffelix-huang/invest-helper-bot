@@ -326,7 +326,7 @@ def handle_postback(event):
                     json.dump(users, f)
             else:
                 user_info = user_info[0]
-            gen_member_card(user_info["name"], userId)
+            # gen_member_card(user_info["name"], userId)
             uid = userId
 
             line_bot_api.reply_message_with_http_info(
@@ -347,4 +347,6 @@ def handle_postback(event):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
+else:
+    application = app
