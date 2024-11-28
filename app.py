@@ -5,6 +5,7 @@ import time
 from random import choice
 
 import iso8601
+import urllib3
 from flask import Flask, request, abort
 import redis
 from openai import OpenAI
@@ -34,6 +35,7 @@ from linebot.v3.webhooks import (
 )
 from dotenv import load_dotenv
 
+urllib3.disable_warnings()
 load_dotenv()
 
 AWS_ENDPOINT = os.getenv("AWS_ENDPOINT")
