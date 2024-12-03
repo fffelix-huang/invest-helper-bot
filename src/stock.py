@@ -7,6 +7,7 @@ import io
 import datetime
 from skfolio.preprocessing import prices_to_returns
 from src.metrics import *
+from src.exceptions import *
 
 matplotlib.use("agg")
 
@@ -22,15 +23,6 @@ VALID_PERIODS = {
     "10y": "10y",
     "max": "max"
 }
-
-class PeriodNotFoundError(Exception):
-    def __init__(self, period: str):
-        valid_periods_str = ", ".join(VALID_PERIODS.keys())
-        super().__init__(f"Period should be one of {valid_periods_str}, but found {period} instead.")
-
-class StockNotFoundError(Exception):
-    def __init__(self, stock: str):
-        super().__init__(f"Symbol {stock} not found.")
 
 def prices_to_cumulative_returns(prices: pd.DataFrame):
     returns = prices_to_returns(prices)
