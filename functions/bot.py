@@ -46,11 +46,9 @@ def call_multiple_stocks(event, line_bot_api, sender, client, s3_client, AWS_BUC
                                 "type": "string"
                             }
                         },
-                        "additionalProperties": False,
-                        "required": [
-                            "symbol_list"
-                        ]
                     },
+                    "additionalProperties": False,
+                    "required": ["symbol_list"]
                 }
             }
         }
