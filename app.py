@@ -35,6 +35,8 @@ from linebot.v3.webhooks import (
 )
 from dotenv import load_dotenv
 
+from functions.bot import call_multiple_stocks
+
 urllib3.disable_warnings()
 load_dotenv()
 
@@ -156,6 +158,10 @@ def handle_message(event):
                                 "description": "輸入錯誤訊息（你可以自由發揮，簡短有效率，中文）",
                                 "type": "string"
                             },
+                            "multiple_stocks": {
+                                "description": "是否有多個股票",
+                                "type": "boolean"
+                            },
                             "additionalProperties": False
                         }
                     }
@@ -172,6 +178,11 @@ def handle_message(event):
                     ]
                 )
             )
+
+        if detect["multiple_stocks"]:
+            return call_multiple_stocks(event, line_bot_api, sender, client, s3_client, AWS_BUCKET, random_tag,
+                                        random_close_tag, random_words)
+
         today = datetime.datetime.now().strftime('%Y-%m-%d')
         response = client.chat.completions.create(
             model="o1-mini",
