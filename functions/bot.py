@@ -34,7 +34,7 @@ def call_multiple_stocks(event, line_bot_api, sender, client, s3_client, AWS_BUC
         response_format={
             "type": "json_schema",
             "json_schema": {
-                "name": "detection_schema",
+                "name": "StockListSchema",
                 "schema": {
                     "type": "object",
                     "properties": {
