@@ -16,26 +16,15 @@ python3 src/main.py
 
 ## Usage
 
-Plot the historical stock price and compare with SPY.
-Alert 5%
-Member System
-
-- Watch List
-  - add()
-  - remove()
-
-- Alert
-  - Interval = 1m 
-  - 5% alert (5 min )
-
-- GPT
-  - summary 
-
-- Input
-  - Stock
-  - Timeframe
+- Plot the historical stock price, metrics and compare with SPY.
+    - Input
+      - Stock
+      - Timeframe
+- AI suggests portfolio allocation.
+    - Input
+        - Stocks
+- GPT summary
+    - Input
+        - Ask question about finance.
 
 
-## API List
-- `schedule_alert()`
-  - return: `[(email, stock, price), ...]`
