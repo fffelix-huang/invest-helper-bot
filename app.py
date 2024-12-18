@@ -172,7 +172,7 @@ def handle_message(event):
                                 "type": "boolean"
                             },
                             "related_question_answer": {
-                                "description": "回答使用者的問題，非財金金融相關的問題不回答，沒問題可以不回答",
+                                "description": "回答使用者的問題。非財金金融相關的問題不回答，沒問題不回答，不回答時回傳不回答的理由",
                                 "type": "string"
                             },
                             "additionalProperties": False
