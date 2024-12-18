@@ -166,6 +166,10 @@ def handle_message(event):
                                 "description": "是否是與財金金融相關的問題（不是分析或回測）",
                                 "type": "boolean"
                             },
+                            "related_question_answer": {
+                                "description": "null 如果 is_related_question_not_analysis 是 False，否則回答",
+                                "type": "string"
+                            },
                             "additionalProperties": False
                         }
                     }
@@ -178,7 +182,7 @@ def handle_message(event):
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
                     messages=[
-                        TextMessage(text="請提出與財金金融相關的問題，並且輸入只能要求我們執行分析或回測不可以產生多餘資訊")
+                        TextMessage(text=detect['related_question_answer'])
                     ]
                 )
             )
