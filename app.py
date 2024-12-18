@@ -35,6 +35,7 @@ from linebot.v3.webhooks import (
 )
 from dotenv import load_dotenv
 
+import src.helper
 from functions.bot import call_multiple_stocks
 
 urllib3.disable_warnings()
@@ -197,7 +198,7 @@ def handle_message(event):
                     ReplyMessageRequest(
                         reply_token=event.reply_token,
                         messages=[
-                            TextMessage(text="我只能回答與財金金融相關的問題")
+                            TextMessage(text=src.helper.helper())
                         ]
                     )
                 )
@@ -207,7 +208,7 @@ def handle_message(event):
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
                     messages=[
-                        TextMessage(text=f"輸入錯誤：{detect['error']} {detect['error_detail']}")
+                        TextMessage(text=f"輸入錯誤：{detect['error']} {detect['error_detail']} {src.helper.helper()}")
                     ]
                 )
             )
@@ -267,7 +268,7 @@ def handle_message(event):
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
                     messages=[
-                        TextMessage(text="發生錯誤，請再試一遍")
+                        TextMessage(text=f"發生錯誤，請再試一遍 {src.helper.helper()}")
                     ]
                 )
             )
