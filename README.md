@@ -1,4 +1,4 @@
-# invest-helper
+# 理財一點通
 
 ## Setup
 
@@ -10,8 +10,12 @@ LINETOKEN=...
 
 ## Run
 
+First, install dependencies by `pip install -r requirements.txt`.
+
+Then, run the program by the following command:
+
 ```py
-python3 src/main.py
+python3 app.py
 ```
 
 ## Usage
