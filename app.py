@@ -100,16 +100,16 @@ def handle_message(event):
                 count, date = 0, time.time()
         r.set(sender + "-gpt-count", f"{int(count) + 1}-{time.time()}")
 
-        if count > 3:
-            line_bot_api.reply_message_with_http_info(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[
-                        TextMessage(text="你的問題太多了，請稍後再問")
-                    ]
-                )
-            )
-            return
+        # if count > 3:
+        #     line_bot_api.reply_message_with_http_info(
+        #         ReplyMessageRequest(
+        #             reply_token=event.reply_token,
+        #             messages=[
+        #                 TextMessage(text="你的問題太多了，請稍後再問")
+        #             ]
+        #         )
+        #     )
+        #     return
 
         client = OpenAI(
             api_key=os.getenv('OPENAI_TOKEN'),
@@ -162,6 +162,10 @@ def handle_message(event):
                                 "description": "是否有多個股票",
                                 "type": "boolean"
                             },
+                            "is_related_question_not_analysis": {
+                                "description": "是否是與財金金融相關的問題（不是分析或回測）",
+                                "type": "boolean"
+                            },
                             "additionalProperties": False
                         }
                     }
@@ -169,6 +173,16 @@ def handle_message(event):
             }
         )
         detect = json.loads(response.choices[0].message.content)
+        if detect["is_related_question_not_analysis"]:
+            return line_bot_api.reply_message_with_http_info(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[
+                        TextMessage(text="請提出與財金金融相關的問題，並且輸入只能要求我們執行分析或回測不可以產生多餘資訊")
+                    ]
+                )
+            )
+
         if not detect["accept"]:
             return line_bot_api.reply_message_with_http_info(
                 ReplyMessageRequest(
