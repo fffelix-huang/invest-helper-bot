@@ -162,8 +162,13 @@ def handle_message(event):
                                 "description": "是否有多個股票",
                                 "type": "boolean"
                             },
-                            "is_related_question_not_analysis": {
-                                "description": "使用者是否有問問題？（不是分析或回測）有的話，是否是與財金金融相關的問題？ （嚴格，False: 不是，True: 是）",
+
+                            "type_is_question": {
+                                "description": "是否是問問題？（不是分析或回測）",
+                                "type": "boolean"
+                            },
+                            "question_is_related": {
+                                "description": "是否是與財金金融相關的問題？（嚴格，False: 不是，True: 是）",
                                 "type": "boolean"
                             },
                             "related_question_answer": {
@@ -177,15 +182,25 @@ def handle_message(event):
             }
         )
         detect = json.loads(response.choices[0].message.content)
-        if detect["is_related_question_not_analysis"]:
-            return line_bot_api.reply_message_with_http_info(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[
-                        TextMessage(text=detect['related_question_answer'])
-                    ]
+        if detect["type_is_question"]:
+            if detect["question_is_related"]:
+                return line_bot_api.reply_message_with_http_info(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[
+                            TextMessage(text=detect['related_question_answer'])
+                        ]
+                    )
                 )
-            )
+            else:
+                return line_bot_api.reply_message_with_http_info(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[
+                            TextMessage(text="我只能回答與財金金融相關的問題")
+                        ]
+                    )
+                )
 
         if not detect["accept"]:
             return line_bot_api.reply_message_with_http_info(
