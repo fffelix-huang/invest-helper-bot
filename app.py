@@ -163,7 +163,7 @@ def handle_message(event):
                                 "type": "boolean"
                             },
                             "is_related_question_not_analysis": {
-                                "description": "是否是與財金金融相關的問題（不是分析或回測）",
+                                "description": "使用者是否有問問題？（不是分析或回測）有的話，是否是與財金金融相關的問題？ （嚴格，False: 不是，True: 是）",
                                 "type": "boolean"
                             },
                             "related_question_answer": {
