@@ -167,7 +167,7 @@ def handle_message(event):
                                 "type": "boolean"
                             },
                             "related_question_answer": {
-                                "description": "null 如果 is_related_question_not_analysis 是 False，否則回答",
+                                "description": "回答 [error] 如果跟財金金融無關，或使用者沒提問題，否則回答使用者的問題",
                                 "type": "string"
                             },
                             "additionalProperties": False
